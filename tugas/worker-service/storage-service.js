@@ -21,7 +21,7 @@ function randomFileName(mimetype) {
     mime.extension(mimetype)
   );
 }
-
+let id = 0;
 function uploadService(req, res) {
   const busboy = new Busboy({ headers: req.headers });
 
@@ -60,21 +60,23 @@ function uploadService(req, res) {
   let formData = new Map();
   busboy.on('field', (fieldname, val) => {
     formData.set(fieldname, val);
-    console.log(fieldname, val);
+    // console.log(fieldname, val);
   });
-  
+
   busboy.on('finish', () => {
     let obj = Object.fromEntries(formData);
-    console.log(obj);
+    // console.log(obj);
     client.on('connect', () => {
         try {
-            setAsync('data', JSON.stringify(obj));
-            const val = getAsync('data');
+            setAsync(id, JSON.stringify(obj));
+            const val = getAsync(id);
             console.log(val);
+            console.log(id);
+            id += 1;
         } catch (err) {
             console.error(err);
         }
-    })
+    });
     res.end();
   });
 

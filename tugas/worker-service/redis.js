@@ -17,9 +17,8 @@ client.on('connect', () => {
 
 async function main() {
   try {
-    await setAsync('data', JSON.stringify(obj));
-    const val = await getAsync('data');
-    console.log(obj);
+    const val = await getAsync('0');
+    console.log(val);
     client.end(true);
   } catch (err) {
     console.error(err);

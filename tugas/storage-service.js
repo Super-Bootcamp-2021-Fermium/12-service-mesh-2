@@ -4,7 +4,7 @@ const mime = require('mime-types');
 const Busboy = require('busboy');
 const url = require('url');
 const { Writable } = require('stream');
-const { setData, delData } = require('./redis');
+const { setData, delData, getData } = require('./redis');
 
 function randomFileName(mimetype) {
   return (
@@ -51,12 +51,14 @@ function uploadService(req, res) {
     }
   });
 
+  let data = new Map();
   busboy.on('field', async (fieldname, val) => {
-    console.log(val);
-    await setData('data', val);
+    data.set(fieldname, val);
   });
   busboy.on('finish', async () => {
-    await delData('data');
+    let obj = Object.fromEntries(data);
+    console.log(obj);
+    const val = await setData('data', JSON.stringify(obj));
     res.end();
   });
 
