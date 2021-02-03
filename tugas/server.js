@@ -1,7 +1,11 @@
 const { createServer } = require('http');
 const url = require('url');
 const { stdout } = require('process');
-const { uploadService, readService } = require('./storage-service');
+const {
+  postService,
+  readService,
+  deleteService,
+} = require('./storage-service');
 
 const server = createServer((req, res) => {
   let method = req.method;
@@ -15,17 +19,25 @@ const server = createServer((req, res) => {
     res.end();
   };
   switch (true) {
-    case uri.pathname === '/pekerjaan/store':
+    case uri.pathname === '/pekerja/store':
       if (method === 'POST') {
-        uploadService(req, res);
+        postService(req, res);
       } else {
         message = 'Method tidak tersedia';
         respond();
       }
       break;
-    case /^\/read\/\w+/.test(uri.pathname):
+    case uri.pathname === '/pekerja/read':
       if (method === 'GET') {
         readService(req, res);
+      } else {
+        message = 'Method tidak tersedia';
+        respond();
+      }
+      break;
+    case /^\/pekerja\/delete\/\w+/.test(uri.pathname):
+      if (method === 'DELETE') {
+        deleteService(req, res);
       } else {
         message = 'Method tidak tersedia';
         respond();

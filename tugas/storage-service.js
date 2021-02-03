@@ -4,7 +4,7 @@ const mime = require('mime-types');
 const Busboy = require('busboy');
 const url = require('url');
 const { Writable } = require('stream');
-const { setData, delData } = require('./redis');
+const { setData, getData } = require('./redis');
 
 function randomFileName(mimetype) {
   return (
@@ -16,8 +16,14 @@ function randomFileName(mimetype) {
   );
 }
 
-function uploadService(req, res) {
+async function postService(req, res) {
   const busboy = new Busboy({ headers: req.headers });
+  let obj = {};
+  let data = JSON.parse(await getData('data'));
+
+  if (!data) {
+    data = { data: [] };
+  }
 
   function abort() {
     req.unpipe(busboy);
@@ -52,11 +58,12 @@ function uploadService(req, res) {
   });
 
   busboy.on('field', async (fieldname, val) => {
-    console.log(val);
-    await setData('data', val);
+    obj[`${fieldname}`] = val;
   });
   busboy.on('finish', async () => {
-    await delData('data');
+    data.data.push(obj);
+    await setData('data', JSON.stringify(data));
+    console.log('data berhasil disimpan');
     res.end();
   });
 
@@ -66,28 +73,37 @@ function uploadService(req, res) {
   req.pipe(busboy);
 }
 
-function readService(req, res) {
+async function readService(req, res) {
+  const data = await getData('data');
+  res.setHeader('Content-Type', 'application/json');
+  res.write(data);
+  res.statusCode = 200;
+  res.end();
+}
+
+async function deleteService(req, res) {
   const uri = url.parse(req.url, true);
-  const filename = uri.pathname.replace('/read/', '');
-  if (!filename) {
+  const data = JSON.parse(await getData('data'));
+  const name = uri.pathname.replace('/pekerja/delete/', '');
+  if (!name) {
     res.statusCode = 400;
     res.write('request tidak sesuai');
     res.end();
   }
-  const file = path.resolve(__dirname, `./file-storage/${filename}`);
-  const exist = fs.existsSync(file);
-  if (!exist) {
-    res.statusCode = 404;
-    res.write('file tidak ditemukan');
-    res.end();
+
+  for (let i = 0; i < data.data.length; i++) {
+    if (data.data[i].nama === name) {
+      data.data.splice(i, 1);
+    }
   }
-  const fileRead = fs.createReadStream(file);
-  res.setHeader('Content-Type', mime.lookup(filename));
+
+  await setData('data', JSON.stringify(data));
   res.statusCode = 200;
-  fileRead.pipe(res);
+  res.end();
 }
 
 module.exports = {
-  uploadService,
+  postService,
   readService,
+  deleteService,
 };
