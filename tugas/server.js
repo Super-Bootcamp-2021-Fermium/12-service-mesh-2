@@ -37,7 +37,13 @@ const server = createServer((req, res) => {
   }
 });
 
-const PORT = 9999;
-server.listen(PORT, () => {
-  stdout.write(`server listening on port ${PORT}\n`);
-});
+function serve() {
+  const PORT = 9999;
+  server.listen(PORT, () => {
+    stdout.write(`server listening on port ${PORT}\n`);
+  });
+}
+
+module.exports = {
+  serve,
+};

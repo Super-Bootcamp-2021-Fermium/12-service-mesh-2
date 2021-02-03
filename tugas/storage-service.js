@@ -4,6 +4,7 @@ const mime = require('mime-types');
 const Busboy = require('busboy');
 const url = require('url');
 const { Writable } = require('stream');
+const { setData, delData } = require('./redis');
 
 function randomFileName(mimetype) {
   return (
@@ -50,10 +51,12 @@ function uploadService(req, res) {
     }
   });
 
-  busboy.on('field', (fieldname, val) => {
+  busboy.on('field', async (fieldname, val) => {
     console.log(val);
+    await setData('data', val);
   });
-  busboy.on('finish', () => {
+  busboy.on('finish', async () => {
+    await delData('data');
     res.end();
   });
 
