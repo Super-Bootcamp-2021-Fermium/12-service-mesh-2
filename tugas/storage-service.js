@@ -4,7 +4,7 @@ const mime = require('mime-types');
 const Busboy = require('busboy');
 const url = require('url');
 const { Writable } = require('stream');
-const { setData, delData, getData } = require('./redis');
+const { setData, getData } = require('./redis');
 
 function randomFileName(mimetype) {
   return (
@@ -40,6 +40,17 @@ function uploadService(req, res) {
           file.pipe(store);
         }
         break;
+      case 'attachment':
+        {
+          const destname = randomFileName(mimetype);
+          const store = fs.createWriteStream(
+            path.resolve(__dirname, `./file-storage/${destname}`)
+          );
+          file.on('error', abort);
+          store.on('error', abort);
+          file.pipe(store);
+        }
+        break;
       default: {
         const noop = new Writable({
           write(chunk, encding, callback) {
@@ -56,9 +67,8 @@ function uploadService(req, res) {
     data.set(fieldname, val);
   });
   busboy.on('finish', async () => {
-    let obj = Object.fromEntries(data);
-    console.log(obj);
-    const val = await setData('data', JSON.stringify(obj));
+    const datanya = await getData('data');
+    console.log('datanya : ', datanya);
     res.end();
   });
 
